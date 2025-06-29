@@ -72,6 +72,7 @@ class BookingController extends Controller
             'selectedSeatsType' => gettype($selectedSeats),
             'selectedSeatsCount' => is_array($selectedSeats) ? count($selectedSeats) : 'not_array',
             'quantity' => $quantity,
+            'quantityType' => gettype($quantity),
             'event_has_seat_selection' => $event->hasSeatSelection()
         ]);
         
@@ -87,11 +88,15 @@ class BookingController extends Controller
             
             Log::info('Seat validation check', [
                 'selectedSeatsCount' => $selectedSeatsCount,
+                'selectedSeatsCountType' => gettype($selectedSeatsCount),
                 'quantity' => $quantity,
-                'match' => $selectedSeatsCount === $quantity
+                'quantityType' => gettype($quantity),
+                'match' => $selectedSeatsCount == $quantity, // Use loose comparison
+                'strictMatch' => $selectedSeatsCount === $quantity // Use strict comparison
             ]);
             
-            if ($selectedSeatsCount !== $quantity) {
+            // Use loose comparison to handle string/integer differences
+            if ($selectedSeatsCount != $quantity) {
                 Log::error('Seat count mismatch', [
                     'selectedSeatsCount' => $selectedSeatsCount,
                     'quantity' => $quantity,

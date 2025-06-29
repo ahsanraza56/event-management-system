@@ -242,7 +242,7 @@
                                 foreach($sectionRows as $rowSeats) {
                                     $sectionSeats = $sectionSeats->merge($rowSeats);
                                 }
-                                $sectionPrice = $sectionSeats->first()->getEffectivePriceAttribute();
+                                $sectionPrice = $sectionSeats->first()->price ?? 0;
                                 $availableCount = $sectionSeats->where('status', 'available')->count();
                                 $totalCount = $sectionSeats->count();
                             @endphp
@@ -297,7 +297,7 @@
                 PKR 0.00
             </div>
             
-            <form action="/debug/booking" method="POST" id="bookingForm">
+            <form action="{{ route('bookings.store', $event) }}" method="POST" id="bookingForm">
                 @csrf
                 <input type="hidden" name="quantity" id="quantity" value="0">
                 
@@ -306,7 +306,7 @@
                 
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary" id="bookButton" disabled>
-                        <i class="fas fa-ticket-alt me-2"></i>Test Booking (Debug)
+                        <i class="fas fa-ticket-alt me-2"></i>Book Selected Seats
                     </button>
                     <a href="{{ route('events.show', $event) }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>Back to Event
