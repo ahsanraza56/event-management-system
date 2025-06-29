@@ -365,6 +365,7 @@ function updateBookingSummary() {
         totalPriceElement.textContent = 'PKR 0.00';
         bookButton.disabled = true;
         selectedSeatsInputs.innerHTML = '';
+        quantityInput.value = 0;
     } else {
         let totalPrice = 0;
         let seatsHtml = '';
@@ -396,10 +397,32 @@ function updateBookingSummary() {
         totalPriceElement.textContent = `PKR ${totalPrice.toFixed(2)}`;
         bookButton.disabled = false;
         selectedSeatsInputs.innerHTML = inputsHtml;
+        
+        // Update quantity to match selected seats count
+        quantityInput.value = selectedSeats.length;
+        
+        // Debug logging
+        console.log('Selected seats:', selectedSeats);
+        console.log('Quantity set to:', selectedSeats.length);
+        console.log('Form inputs created:', inputsHtml);
     }
-    
-    quantityInput.value = selectedSeats.length;
 }
+
+// Add form submission debugging
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    const quantity = document.getElementById('quantity').value;
+    const selectedSeatsInputs = document.querySelectorAll('input[name="selected_seats[]"]');
+    
+    console.log('Form submission - Quantity:', quantity);
+    console.log('Form submission - Selected seats count:', selectedSeatsInputs.length);
+    console.log('Form submission - Selected seats values:', Array.from(selectedSeatsInputs).map(input => input.value));
+    
+    if (parseInt(quantity) !== selectedSeatsInputs.length) {
+        e.preventDefault();
+        alert('Error: Quantity and selected seats count do not match. Please try selecting seats again.');
+        return false;
+    }
+});
 
 function filterSeats(filter) {
     const seats = document.querySelectorAll('.seat');

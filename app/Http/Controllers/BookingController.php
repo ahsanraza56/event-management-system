@@ -52,6 +52,7 @@ class BookingController extends Controller
 
         // Handle seat selection
         $selectedSeats = $request->input('selected_seats', []);
+        $quantity = (int) $request->input('quantity', 1);
         $totalAmount = 0;
         
         if ($event->hasSeatSelection()) {
@@ -60,8 +61,11 @@ class BookingController extends Controller
                 return back()->with('error', 'Please select seats for this event.');
             }
 
-            if (count($selectedSeats) !== $request->input('quantity')) {
-                return back()->with('error', 'Number of selected seats must match the quantity.');
+            // Ensure selected_seats is an array and count matches quantity
+            $selectedSeatsCount = is_array($selectedSeats) ? count($selectedSeats) : 0;
+            
+            if ($selectedSeatsCount !== $quantity) {
+                return back()->with('error', "Number of selected seats ({$selectedSeatsCount}) must match the quantity ({$quantity}).");
             }
 
             // Check if selected seats are available
@@ -81,7 +85,7 @@ class BookingController extends Controller
             Seat::whereIn('id', $selectedSeats)->update(['status' => 'booked']);
         } else {
             // Calculate total amount from event price and quantity
-            $totalAmount = $event->price * $request->input('quantity', 1);
+            $totalAmount = $event->price * $quantity;
         }
 
         // Create booking
@@ -89,7 +93,7 @@ class BookingController extends Controller
             'user_id' => Auth::id(),
             'event_id' => $event->id,
             'status' => 'confirmed',
-            'quantity' => $request->input('quantity', 1),
+            'quantity' => $quantity,
             'selected_seats' => $selectedSeats,
             'total_amount' => $totalAmount,
         ]);
