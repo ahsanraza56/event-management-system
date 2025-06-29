@@ -46,6 +46,18 @@ if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then
     php artisan key:generate
 fi
 
+# Set HTTPS environment variables for Railway
+echo "🔒 Configuring HTTPS settings..."
+export FORCE_HTTPS=true
+export APP_ENV=production
+export APP_DEBUG=false
+
+# Set APP_URL to HTTPS if not already set
+if [ -z "$APP_URL" ] || [[ "$APP_URL" != "https://"* ]]; then
+    export APP_URL="https://$RAILWAY_STATIC_URL"
+    echo "🌐 Set APP_URL to: $APP_URL"
+fi
+
 # Cache configuration
 echo "⚙️ Optimizing configuration..."
 php artisan config:cache
