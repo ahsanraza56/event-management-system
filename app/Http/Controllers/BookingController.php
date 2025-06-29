@@ -10,6 +10,7 @@ use App\Mail\BookingStatusUpdate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class BookingController extends Controller
 {
@@ -25,6 +26,16 @@ class BookingController extends Controller
 
     public function store(Request $request, Event $event)
     {
+        // Debug logging
+        Log::info('Booking request received', [
+            'event_id' => $event->id,
+            'all_request_data' => $request->all(),
+            'quantity' => $request->input('quantity'),
+            'selected_seats' => $request->input('selected_seats'),
+            'selected_seats_type' => gettype($request->input('selected_seats')),
+            'selected_seats_count' => is_array($request->input('selected_seats')) ? count($request->input('selected_seats')) : 'not_array'
+        ]);
+
         $request->validate([
             'quantity' => 'required|integer|min:1|max:5',
             'selected_seats' => 'nullable|array',
@@ -55,16 +66,37 @@ class BookingController extends Controller
         $quantity = (int) $request->input('quantity', 1);
         $totalAmount = 0;
         
+        // Additional debug logging
+        Log::info('Processing booking', [
+            'selectedSeats' => $selectedSeats,
+            'selectedSeatsType' => gettype($selectedSeats),
+            'selectedSeatsCount' => is_array($selectedSeats) ? count($selectedSeats) : 'not_array',
+            'quantity' => $quantity,
+            'event_has_seat_selection' => $event->hasSeatSelection()
+        ]);
+        
         if ($event->hasSeatSelection()) {
             // Validate seat selection
             if (empty($selectedSeats)) {
+                Log::warning('No seats selected for event with seat selection');
                 return back()->with('error', 'Please select seats for this event.');
             }
 
             // Ensure selected_seats is an array and count matches quantity
             $selectedSeatsCount = is_array($selectedSeats) ? count($selectedSeats) : 0;
             
+            Log::info('Seat validation check', [
+                'selectedSeatsCount' => $selectedSeatsCount,
+                'quantity' => $quantity,
+                'match' => $selectedSeatsCount === $quantity
+            ]);
+            
             if ($selectedSeatsCount !== $quantity) {
+                Log::error('Seat count mismatch', [
+                    'selectedSeatsCount' => $selectedSeatsCount,
+                    'quantity' => $quantity,
+                    'selectedSeats' => $selectedSeats
+                ]);
                 return back()->with('error', "Number of selected seats ({$selectedSeatsCount}) must match the quantity ({$quantity}).");
             }
 
@@ -96,6 +128,13 @@ class BookingController extends Controller
             'quantity' => $quantity,
             'selected_seats' => $selectedSeats,
             'total_amount' => $totalAmount,
+        ]);
+
+        Log::info('Booking created successfully', [
+            'booking_id' => $booking->id,
+            'quantity' => $booking->quantity,
+            'selected_seats' => $booking->selected_seats,
+            'total_amount' => $booking->total_amount
         ]);
 
         // Send confirmation email

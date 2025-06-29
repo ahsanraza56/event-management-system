@@ -17,6 +17,18 @@ Route::get('/health', function () {
     ]);
 });
 
+// Debug route for booking testing
+Route::post('/debug/booking', function (Illuminate\Http\Request $request) {
+    return response()->json([
+        'received_data' => $request->all(),
+        'quantity' => $request->input('quantity'),
+        'selected_seats' => $request->input('selected_seats'),
+        'selected_seats_type' => gettype($request->input('selected_seats')),
+        'selected_seats_count' => is_array($request->input('selected_seats')) ? count($request->input('selected_seats')) : 'not_array',
+        'headers' => $request->headers->all()
+    ]);
+});
+
 // Public routes
 Route::get('/', function () {
     return redirect()->route('events.index');
