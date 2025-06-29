@@ -156,12 +156,30 @@ class BookingController extends Controller
 
     public function show(Booking $booking)
     {
-        // Ensure user can only view their own bookings
-        if ($booking->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
-            abort(403);
-        }
+        try {
+            // Ensure user can only view their own bookings
+            if ($booking->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+                abort(403, 'You are not authorized to view this booking.');
+            }
 
-        return view('bookings.show', compact('booking'));
+            // Load relationships to prevent N+1 queries
+            $booking->load(['user', 'event']);
+
+            // Check if booking has required data
+            if (!$booking->event) {
+                return back()->with('error', 'This booking is associated with an event that no longer exists.');
+            }
+
+            return view('bookings.show', compact('booking'));
+        } catch (\Exception $e) {
+            \Log::error('Error showing booking: ' . $e->getMessage(), [
+                'booking_id' => $booking->id ?? 'unknown',
+                'user_id' => Auth::id(),
+                'exception' => $e
+            ]);
+            
+            return back()->with('error', 'Unable to load booking details. Please try again.');
+        }
     }
 
     public function cancel(Booking $booking)

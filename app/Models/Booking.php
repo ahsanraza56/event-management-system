@@ -63,7 +63,11 @@ class Booking extends Model
      */
     public function seats()
     {
-        return Seat::whereIn('id', $this->selected_seats ?? []);
+        if (!$this->selected_seats || !is_array($this->selected_seats) || empty($this->selected_seats)) {
+            return collect(); // Return empty collection
+        }
+        
+        return Seat::whereIn('id', $this->selected_seats)->get();
     }
 
     /**
@@ -113,15 +117,15 @@ class Booking extends Model
      */
     public function getQrCodeString()
     {
-        return "Event: " . ($this->event->title ?? '-') . "\n"
-            . "Venue: " . ($this->event->venue ?? '-') . "\n"
-            . "Date: " . ($this->event->date ? $this->event->date->format('Y-m-d') : '-') . "\n"
-            . "Time: " . ($this->event->time ? \Carbon\Carbon::parse($this->event->time)->format('h:i A') : '-') . "\n"
-            . "Ticket #: " . $this->ticket_number . "\n"
-            . "Seats Booked: " . $this->quantity . "\n"
-            . "Name: " . ($this->user->name ?? '-') . "\n"
-            . "Email: " . ($this->user->email ?? '-') . "\n"
-            . "Status: " . ucfirst($this->status);
+        return "Event: " . ($this->event->title ?? 'Unknown Event') . "\n"
+            . "Venue: " . ($this->event->venue ?? 'TBD') . "\n"
+            . "Date: " . ($this->event->date ? $this->event->date->format('Y-m-d') : 'TBD') . "\n"
+            . "Time: " . ($this->event->time ? \Carbon\Carbon::parse($this->event->time)->format('h:i A') : 'TBD') . "\n"
+            . "Ticket #: " . ($this->ticket_number ?? 'N/A') . "\n"
+            . "Seats Booked: " . ($this->quantity ?? 1) . "\n"
+            . "Name: " . ($this->user->name ?? 'Unknown') . "\n"
+            . "Email: " . ($this->user->email ?? 'N/A') . "\n"
+            . "Status: " . ucfirst($this->status ?? 'unknown');
     }
 
     /**

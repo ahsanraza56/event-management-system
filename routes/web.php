@@ -22,6 +22,66 @@ Route::get('/', function () {
     return redirect()->route('events.index');
 });
 
+// Debug route for booking issues (public for testing)
+Route::get('/debug/booking/{id}', function ($id) {
+    try {
+        $booking = \App\Models\Booking::with(['user', 'event'])->find($id);
+        
+        if (!$booking) {
+            return response()->json([
+                'error' => 'Booking not found',
+                'id' => $id
+            ]);
+        }
+        
+        return response()->json([
+            'booking' => $booking->toArray(),
+            'relationships' => [
+                'user' => $booking->user ? $booking->user->toArray() : null,
+                'event' => $booking->event ? $booking->event->toArray() : null,
+            ],
+            'selected_seats' => $booking->selected_seats,
+            'seats_count' => $booking->seats()->count()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+});
+
+// Public route to check booking statistics
+Route::get('/debug/bookings', function () {
+    try {
+        $stats = [
+            'total_bookings' => \App\Models\Booking::count(),
+            'total_users' => \App\Models\User::count(),
+            'total_events' => \App\Models\Event::count(),
+            'recent_bookings' => \App\Models\Booking::with(['user', 'event'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function($booking) {
+                    return [
+                        'id' => $booking->id,
+                        'user' => $booking->user ? $booking->user->name : 'Unknown',
+                        'event' => $booking->event ? $booking->event->title : 'Unknown',
+                        'status' => $booking->status,
+                        'created_at' => $booking->created_at
+                    ];
+                })
+        ];
+        
+        return response()->json($stats);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+});
+
 // Authentication routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -66,7 +126,7 @@ Route::middleware('auth')->group(function () {
         
         // Admin bookings
         Route::get('/bookings', [BookingController::class, 'adminIndex'])->name('bookings.index');
-        Route::get('/bookings/{booking}', [BookingController::class, 'adminShow'])->name('bookings.show');
+        Route::get('/bookings/{booking}/details', [BookingController::class, 'adminShow'])->name('bookings.show');
         Route::patch('/bookings/{booking}', [BookingController::class, 'adminUpdate'])->name('bookings.update');
         
         // Admin analytics
