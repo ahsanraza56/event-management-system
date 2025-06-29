@@ -107,13 +107,14 @@ dl.row dd {
                 <hr>
                 <div class="qr-code text-center">
                     @if(class_exists('SimpleSoftwareIO\\QrCode\\Facades\\QrCode'))
-                        @try
-                            {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(150)->generate($booking->getQrCodeString()) !!}
-                        @catch(Exception $e)
-                            <div class="alert alert-warning">
-                                <strong>QR Code Error:</strong> Unable to generate QR code.
-                            </div>
-                        @endtry
+                        @php
+                            try {
+                                $qrCode = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(150)->generate($booking->getQrCodeString());
+                                echo $qrCode;
+                            } catch(Exception $e) {
+                                echo '<div class="alert alert-warning"><strong>QR Code Error:</strong> Unable to generate QR code.</div>';
+                            }
+                        @endphp
                     @else
                         <div class="alert alert-warning">
                             <strong>QR Code Package Missing:</strong> Please install <code>simplesoftwareio/simple-qrcode</code> package.
