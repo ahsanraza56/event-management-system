@@ -8,9 +8,13 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\SeatSelectionController;
 use App\Http\Controllers\AdminAnalyticsController;
 
-// Health check route for Railway
+// Health check route for Railway (simple, no database dependency)
 Route::get('/health', function () {
-    return response()->json(['status' => 'ok', 'message' => 'Event Management System is running']);
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'Event Management System is running',
+        'timestamp' => now()->toISOString()
+    ]);
 });
 
 // Public routes
