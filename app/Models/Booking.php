@@ -20,11 +20,13 @@ class Booking extends Model
         'booking_date',
         'quantity',
         'selected_seats', // JSON array of selected seat IDs
+        'total_amount',
     ];
 
     protected $casts = [
         'booking_date' => 'datetime',
         'selected_seats' => 'array',
+        'total_amount' => 'decimal:2',
     ];
 
     /**
@@ -123,10 +125,16 @@ class Booking extends Model
     }
 
     /**
-     * Calculate total amount for this booking
+     * Calculate total amount for this booking (fallback method)
      */
     public function getTotalAmountAttribute(): float
     {
+        // If total_amount is already set, return it
+        if (isset($this->attributes['total_amount']) && $this->attributes['total_amount'] > 0) {
+            return (float) $this->attributes['total_amount'];
+        }
+
+        // Fallback calculation
         if ($this->selected_seats && count($this->selected_seats) > 0) {
             // Calculate based on selected seats
             return $this->seats()->sum('price');

@@ -60,6 +60,10 @@ php artisan app:check-database
 echo "🗄️ Running database migrations..."
 php artisan migrate --force
 
+# Update existing bookings with total amounts
+echo "💰 Updating booking totals..."
+php artisan app:update-booking-totals
+
 # Seed database if needed (only if it's empty)
 echo "🌱 Checking if database needs seeding..."
 if ! php artisan tinker --execute='echo App\Models\Event::count();' 2>/dev/null | grep -q "[1-9]"; then

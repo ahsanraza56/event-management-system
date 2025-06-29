@@ -26,13 +26,15 @@ class AdminAnalyticsController extends Controller
             'total_revenue' => Booking::where('status', 'confirmed')->get()->sum('total_amount'),
         ];
 
-        // Monthly Booking Trends (Last 6 months) - MySQL compatible
-        $monthlyBookings = Booking::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-            ->where('created_at', '>=', Carbon::now()->subMonths(6))
-            ->groupBy('month')
-            ->orderBy('month')
+        // Monthly Booking Trends (Last 6 months) - SQLite compatible
+        $monthlyBookings = Booking::where('created_at', '>=', Carbon::now()->subMonths(6))
             ->get()
-            ->pluck('count', 'month')
+            ->groupBy(function($booking) {
+                return $booking->created_at->format('n'); // Month number
+            })
+            ->map(function($bookings) {
+                return $bookings->count();
+            })
             ->toArray();
 
         // Top Events by Bookings
@@ -49,7 +51,7 @@ class AdminAnalyticsController extends Controller
             ->take(10)
             ->get();
 
-        // Revenue by Month - MySQL compatible
+        // Revenue by Month - SQLite compatible
         $monthlyRevenue = Booking::where('status', 'confirmed')
             ->where('created_at', '>=', Carbon::now()->subMonths(6))
             ->get()
@@ -61,16 +63,20 @@ class AdminAnalyticsController extends Controller
             })
             ->toArray();
 
-        // Event Status Distribution
-        $eventStatus = Event::selectRaw('status, COUNT(*) as count')
+        // Event Status Distribution - SQLite compatible
+        $eventStatus = Event::all()
             ->groupBy('status')
-            ->pluck('count', 'status')
+            ->map(function($events) {
+                return $events->count();
+            })
             ->toArray();
 
-        // Booking Status Distribution
-        $bookingStatus = Booking::selectRaw('status, COUNT(*) as count')
+        // Booking Status Distribution - SQLite compatible
+        $bookingStatus = Booking::all()
             ->groupBy('status')
-            ->pluck('count', 'status')
+            ->map(function($bookings) {
+                return $bookings->count();
+            })
             ->toArray();
 
         $totalBookings = Booking::count();
@@ -85,10 +91,17 @@ class AdminAnalyticsController extends Controller
         $reservedSeats = Seat::where('status', 'reserved')->count();
         $seatUtilization = $totalSeats > 0 ? round(($bookedSeats / $totalSeats) * 100, 2) : 0;
         
-        // Seat section breakdown
-        $seatSections = Seat::selectRaw('section, COUNT(*) as total, SUM(CASE WHEN status = "booked" THEN 1 ELSE 0 END) as booked')
+        // Seat section breakdown - SQLite compatible
+        $seatSections = Seat::all()
             ->groupBy('section')
-            ->get();
+            ->map(function($seats, $section) {
+                return [
+                    'section' => $section,
+                    'total' => $seats->count(),
+                    'booked' => $seats->where('status', 'booked')->count()
+                ];
+            })
+            ->values();
 
         return view('admin.analytics.index', compact(
             'stats',

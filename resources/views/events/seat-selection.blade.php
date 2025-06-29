@@ -238,7 +238,10 @@
                             <div class="section-title">{{ ucfirst($sectionName) }} Section</div>
                             
                             @php
-                                $sectionSeats = collect($sectionRows)->flatten(1);
+                                $sectionSeats = collect();
+                                foreach($sectionRows as $rowSeats) {
+                                    $sectionSeats = $sectionSeats->merge($rowSeats);
+                                }
                                 $sectionPrice = $sectionSeats->first()->getEffectivePriceAttribute();
                                 $availableCount = $sectionSeats->where('status', 'available')->count();
                                 $totalCount = $sectionSeats->count();
@@ -297,7 +300,9 @@
             <form action="{{ route('bookings.store', $event) }}" method="POST" id="bookingForm">
                 @csrf
                 <input type="hidden" name="quantity" id="quantity" value="0">
-                <input type="hidden" name="selected_seats" id="selectedSeats" value="">
+                
+                <!-- Create hidden inputs for each selected seat -->
+                <div id="selectedSeatsInputs"></div>
                 
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary" id="bookButton" disabled>
@@ -352,16 +357,18 @@ function updateBookingSummary() {
     const selectedSeatsList = document.getElementById('selectedSeatsList');
     const totalPriceElement = document.getElementById('totalPrice');
     const quantityInput = document.getElementById('quantity');
-    const selectedSeatsInput = document.getElementById('selectedSeats');
+    const selectedSeatsInputs = document.getElementById('selectedSeatsInputs');
     const bookButton = document.getElementById('bookButton');
     
     if (selectedSeats.length === 0) {
         selectedSeatsList.innerHTML = '<p class="text-muted text-center">No seats selected</p>';
         totalPriceElement.textContent = 'PKR 0.00';
         bookButton.disabled = true;
+        selectedSeatsInputs.innerHTML = '';
     } else {
         let totalPrice = 0;
         let seatsHtml = '';
+        let inputsHtml = '';
         
         selectedSeats.forEach(seatId => {
             const seatElement = document.querySelector(`[data-seat-id="${seatId}"]`);
@@ -380,15 +387,18 @@ function updateBookingSummary() {
                     </div>
                 </div>
             `;
+            
+            // Create hidden input for each selected seat
+            inputsHtml += `<input type="hidden" name="selected_seats[]" value="${seatId}">`;
         });
         
         selectedSeatsList.innerHTML = seatsHtml;
         totalPriceElement.textContent = `PKR ${totalPrice.toFixed(2)}`;
         bookButton.disabled = false;
+        selectedSeatsInputs.innerHTML = inputsHtml;
     }
     
     quantityInput.value = selectedSeats.length;
-    selectedSeatsInput.value = JSON.stringify(selectedSeats);
 }
 
 function filterSeats(filter) {

@@ -52,6 +52,7 @@ class BookingController extends Controller
 
         // Handle seat selection
         $selectedSeats = $request->input('selected_seats', []);
+        $totalAmount = 0;
         
         if ($event->hasSeatSelection()) {
             // Validate seat selection
@@ -73,8 +74,14 @@ class BookingController extends Controller
                 return back()->with('error', 'Some selected seats are no longer available.');
             }
 
+            // Calculate total amount from selected seats
+            $totalAmount = $seats->sum('price');
+
             // Mark seats as booked
             Seat::whereIn('id', $selectedSeats)->update(['status' => 'booked']);
+        } else {
+            // Calculate total amount from event price and quantity
+            $totalAmount = $event->price * $request->input('quantity', 1);
         }
 
         // Create booking
@@ -84,6 +91,7 @@ class BookingController extends Controller
             'status' => 'confirmed',
             'quantity' => $request->input('quantity', 1),
             'selected_seats' => $selectedSeats,
+            'total_amount' => $totalAmount,
         ]);
 
         // Send confirmation email
